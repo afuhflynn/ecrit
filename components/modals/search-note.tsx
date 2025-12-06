@@ -7,14 +7,20 @@ import { KEYS } from "@/lib/keys";
 import { QUERIES } from "@/lib/query";
 import { Notes, PaginatedNotes } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { Button } from "../ui/button";
+import { toast } from "sonner";
+import { NoteSchema } from "@/lib/zod-schema";
+import { LoadingButton } from "../ui/loading-button";
 
 export const SearchNote = () => {
   const { onClose, type } = useModal();
   const router = useRouter();
+  const [newSlug, setNewSlug] = useState("");
   const isSearchNoteModalOpen = type === "search";
+  const queryClient = useQueryClient();
 
   const [search, setSearch] = useState("");
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -24,6 +30,22 @@ export const SearchNote = () => {
     queryKey: [KEYS.NOTES],
     queryFn: () => QUERIES.NOTES.all(),
     enabled: isSearchNoteModalOpen,
+  });
+
+  const { mutate: createNote, isPending } = useMutation({
+    mutationFn: (data: NoteSchema) => QUERIES.NOTES.create(data),
+    onSuccess: (data: Notes) => {
+      toast.success("Note created successfully");
+      queryClient.invalidateQueries({ queryKey: [KEYS.NOTES] });
+      router.push(`/n/${data.slug}`);
+      onClose();
+    },
+    onError: (error: unknown) => {
+      const axiosError = error as { response?: { data?: { error?: string } } };
+      const message =
+        axiosError.response?.data?.error || "Failed to create note";
+      toast.error(message);
+    },
   });
 
   const filteredNotes =
@@ -55,6 +77,16 @@ export const SearchNote = () => {
     router.push(`/n/${slug}`);
     onClose();
   };
+
+  useEffect(() => {
+    const title = search;
+    const newSlug = title
+      .toLowerCase()
+      .trim()
+      .replace(/\s+/g, "-")
+      .replace(/^-+|-+$/g, "");
+    setNewSlug(newSlug);
+  }, [search]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (filteredNotes.length === 0) return;
@@ -108,9 +140,18 @@ export const SearchNote = () => {
               </p>
             )}
             {!isLoading && filteredNotes.length === 0 && (
-              <p className="text-sm text-muted-foreground p-2">
-                No notes found
-              </p>
+              <div className="flex flex-col gap-2 items-center justify-center p-2">
+                <p className="text-sm text-muted-foreground p-2">
+                  Note not found
+                </p>
+                <LoadingButton
+                  onClick={() => createNote({ title: search, slug: newSlug })}
+                  loading={isPending}
+                  disabled={isPending || !newSlug}
+                >
+                  Create {`"${search}"`} note
+                </LoadingButton>
+              </div>
             )}
             {filteredNotes.map((note: Notes, index: number) => (
               <button
