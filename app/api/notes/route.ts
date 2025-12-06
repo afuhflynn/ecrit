@@ -5,6 +5,7 @@ import { db } from "@/db/drizzle";
 import { notes } from "@/db/schema";
 import { eq, desc } from "drizzle-orm";
 import { nanoid } from "nanoid";
+import { noteSchema } from "@/lib/zod-schema";
 
 export const GET = async () => {
   const session = await auth.api.getSession({
@@ -34,14 +35,7 @@ export const POST = async (request: NextRequest) => {
   }
 
   const body = await request.json();
-  const { title, slug } = body;
-
-  if (!title || !slug) {
-    return NextResponse.json(
-      { error: "Title and slug are required" },
-      { status: 400 }
-    );
-  }
+  const { title, slug } = noteSchema.parse(body);
 
   const newNote = await db
     .insert(notes)
