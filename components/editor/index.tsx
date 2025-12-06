@@ -1,5 +1,33 @@
 "use client";
 
+// Web Speech API type declarations
+interface SpeechRecognitionEvent extends Event {
+  resultIndex: number;
+  results: SpeechRecognitionResultList;
+}
+
+interface SpeechRecognitionErrorEvent extends Event {
+  error: string;
+}
+
+interface SpeechRecognition extends EventTarget {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  onresult: ((event: SpeechRecognitionEvent) => void) | null;
+  onerror: ((event: SpeechRecognitionErrorEvent) => void) | null;
+  onend: (() => void) | null;
+  start: () => void;
+  stop: () => void;
+}
+
+declare global {
+  interface Window {
+    SpeechRecognition?: new () => SpeechRecognition;
+    webkitSpeechRecognition?: new () => SpeechRecognition;
+  }
+}
+
 import {
   EditorCommand,
   EditorCommandEmpty,
@@ -12,6 +40,7 @@ import { ImageResizer, handleCommandNavigation } from "novel/extensions";
 import { handleImageDrop, handleImagePaste } from "novel/plugins";
 import { useEffect, useRef, useState } from "react";
 import { useDebouncedCallback } from "use-debounce";
+import { AnimatePresence, motion } from "motion/react";
 
 import { defaultExtensions } from "@/components/editor/extensions";
 import { useUploadFn } from "@/components/editor/image-upload";
@@ -22,8 +51,10 @@ import { TextButtons } from "@/components/editor/selector/text-button";
 import { slashCommand } from "@/components/editor/slash-command";
 
 import UploadImage from "@/components/modals/upload-image";
+import { Button } from "@/components/ui/button";
 import { TextareaAutosize } from "@/components/resizable-text-area";
 import { Separator } from "@/components/ui/separator";
+import { Mic, MicOff } from "lucide-react";
 
 import EditorMenu from "./menu";
 import SlashCommands from "./slash-commands";
@@ -37,6 +68,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { useCallback } from "react";
+import SoundWave from "./sound-wave";
 
 const extensions = [...defaultExtensions, slashCommand];
 
@@ -45,7 +77,6 @@ const defaultValue: JSONContent = {
   content: [],
 };
 
-// Convert plain text to editor JSON format
 const textToEditorContent = (text: string): JSONContent => {
   if (!text) return defaultValue;
 
@@ -60,20 +91,16 @@ const textToEditorContent = (text: string): JSONContent => {
   };
 };
 
-// Parse content - handles both JSON and plain text
 const parseContent = (content: string): JSONContent => {
   if (!content) return defaultValue;
 
   try {
     const parsed = JSON.parse(content);
-    // Check if it's valid editor JSON format
     if (parsed.type === "doc") {
       return parsed;
     }
-    // If it's JSON but not editor format, treat as text
     return textToEditorContent(content);
   } catch {
-    // Not JSON, treat as plain text
     return textToEditorContent(content);
   }
 };
@@ -90,6 +117,10 @@ export default function Editor() {
   const [openColor, setOpenColor] = useState(false);
   const [openLink, setOpenLink] = useState(false);
   const [openAI, setOpenAI] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+  const [transcript, setTranscript] = useState("");
+  const lastEscPressRef = useRef<number>(0);
+  const recognitionRef = useRef<SpeechRecognition | null>(null);
   const uploadFn = useUploadFn();
 
   const form = useForm<NoteContentSchema>({
@@ -141,17 +172,144 @@ export default function Editor() {
     saveNote(formData);
   }, [data?.id, form, isSaving, saveNote]);
 
+  const startVoiceRecording = useCallback(async () => {
+    console.log("Starting voice recording...");
+
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      toast.error("Your browser doesn't support microphone access");
+      setIsRecording(false);
+      return;
+    }
+
+    try {
+      console.log("Requesting microphone permission...");
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: true,
+      });
+      console.log("Microphone permission granted!");
+      stream.getTracks().forEach((track) => track.stop());
+    } catch (error) {
+      console.error("Microphone permission denied:", error);
+      toast.error(`Microphone error: ${(error as Error).message}`);
+      setIsRecording(false);
+      return;
+    }
+
+    const SpeechRecognition =
+      window.SpeechRecognition || window.webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+      toast.error("Speech recognition is not supported in this browser");
+      setIsRecording(false);
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.lang = "en-US";
+
+    recognition.onresult = (event: SpeechRecognitionEvent) => {
+      let finalTranscript = "";
+      let interimTranscript = "";
+
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const result = event.results[i];
+        if (result.isFinal) {
+          finalTranscript += result[0].transcript;
+        } else {
+          interimTranscript += result[0].transcript;
+        }
+      }
+
+      setTranscript(interimTranscript || finalTranscript);
+
+      if (finalTranscript && editorRef.current) {
+        editorRef.current.commands.insertContent(finalTranscript + " ");
+        setTranscript("");
+      }
+    };
+
+    recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
+      console.error("Speech recognition error:", event.error);
+      if (event.error === "not-allowed") {
+        toast.error(
+          "Microphone access denied. Please allow microphone access in your browser settings."
+        );
+        setIsRecording(false);
+      } else if (event.error !== "no-speech" && event.error !== "aborted") {
+        toast.error(`Voice recognition error: ${event.error}`);
+      }
+    };
+
+    recognition.onend = () => {
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.start();
+        } catch {
+          console.error("Failed to restart recognition");
+        }
+      }
+    };
+
+    recognitionRef.current = recognition;
+
+    try {
+      recognition.start();
+      toast.success("Voice recording started. Press Esc to stop.");
+    } catch (error) {
+      console.error("Failed to start recognition:", error);
+      toast.error("Failed to start voice recognition");
+      setIsRecording(false);
+    }
+  }, []);
+
+  const stopVoiceRecording = useCallback(() => {
+    if (recognitionRef.current) {
+      recognitionRef.current.stop();
+      recognitionRef.current = null;
+    }
+    setTranscript("");
+  }, []);
+
+  const handleMicButtonClick = async () => {
+    if (isRecording) {
+      stopVoiceRecording();
+      setIsRecording(false);
+      toast.info("Voice recording stopped.");
+    } else {
+      setIsRecording(true);
+      await startVoiceRecording();
+    }
+  };
+
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
+    const handleKeyDown = async (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === "s") {
         e.preventDefault();
         handleSave();
+      }
+
+      if (e.key === "Escape") {
+        if (isRecording) {
+          stopVoiceRecording();
+          setIsRecording(false);
+          toast.info("Voice recording stopped.");
+          return;
+        }
+
+        const now = Date.now();
+        if (now - lastEscPressRef.current < 300) {
+          setIsRecording(true);
+          await startVoiceRecording();
+        }
+        lastEscPressRef.current = now;
       }
     };
 
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [handleSave]);
+  }, [handleSave, isRecording, startVoiceRecording, stopVoiceRecording]);
 
   const {
     register,
@@ -258,8 +416,9 @@ export default function Editor() {
             className="scrollbar-hide mb-2 w-full resize-none bg-transparent font-semibold prose-headings:font-semibold text-4xl focus:outline-hidden focus:ring-0 sm:px-4"
             onKeyDown={handleKeyDown}
           />
+
           <div
-            className="flex-1 flex flex-col"
+            className="flex-1 flex flex-col relative"
             onClick={() => editorRef.current?.commands.focus()}
           >
             <EditorContent
@@ -316,6 +475,35 @@ export default function Editor() {
                 <ColorSelector open={openColor} onOpenChange={setOpenColor} />
               </EditorMenu>
             </EditorContent>
+            <AnimatePresence initial={false}>
+              {isRecording && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 10 }}
+                  transition={{ duration: 0.2 }}
+                  className="absolute bottom-4 left-1/2 -translate-x-1/2 z-50 border bg-background px-4 py-3 shadow-lg rounded-2xl flex flex-col items-center gap-2"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="size-3 bg-red-500 rounded-full animate-pulse" />
+                    <span className="text-sm text-muted-foreground">
+                      Recording... Press Esc to stop
+                    </span>
+                  </div>
+                  <SoundWave
+                    bars={20}
+                    height={30}
+                    width={150}
+                    color="var(--primary)"
+                  />
+                  {transcript && (
+                    <p className="text-sm text-muted-foreground italic max-w-xs truncate">
+                      {transcript}
+                    </p>
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </EditorRoot>
         <div
