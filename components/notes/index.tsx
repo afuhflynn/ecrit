@@ -6,9 +6,11 @@ import { KEYS } from "@/lib/keys";
 import { Notes as NoteType } from "@/lib/types";
 import { Button } from "../ui/button";
 import { useDesktopOS } from "@/hooks/use-os";
+import useModal from "@/hooks/use-modal";
 
 export const Notes = () => {
   const os = useDesktopOS();
+  const { onOpen } = useModal();
   const { data, isLoading, error } = useQuery({
     queryKey: [KEYS.NOTES],
     queryFn: () => QUERIES.NOTES.all(),
@@ -28,7 +30,7 @@ export const Notes = () => {
               Create your first note to get started
             </p>
           </div>
-          <Button>
+          <Button onClick={() => onOpen("create-note")}>
             Create Note{" "}
             <span className="text-muted-foreground">{`(${os} + N)`}</span>
           </Button>
