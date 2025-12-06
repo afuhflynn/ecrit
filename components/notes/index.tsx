@@ -3,7 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { QUERIES } from "@/lib/query";
 import { KEYS } from "@/lib/keys";
-import { Notes as NoteType } from "@/lib/types";
+import { Notes as NoteType, PaginatedNotes } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { useDesktopOS } from "@/hooks/use-os";
 import useModal from "@/hooks/use-modal";
@@ -14,7 +14,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 export const Notes = () => {
   const os = useDesktopOS();
   const { onOpen } = useModal();
-  const { data, isLoading, error } = useQuery({
+  const { data, isLoading, error } = useQuery<PaginatedNotes>({
     queryKey: [KEYS.NOTES],
     queryFn: () => QUERIES.NOTES.all(),
   });
@@ -29,7 +29,9 @@ export const Notes = () => {
     );
   if (error) return <div>Error: {error.message}</div>;
 
-  if (data.length === 0)
+  const notes = data?.data ?? [];
+
+  if (notes.length === 0)
     return (
       <div>
         <div className="flex flex-col gap-8 items-center justify-center h-full">
@@ -48,8 +50,8 @@ export const Notes = () => {
     );
 
   return (
-    <div className="flex  flex-col justify-between w-full border divide-y">
-      {data.map((note: NoteType) => (
+    <div className="flex flex-col justify-between w-full border divide-y">
+      {notes.map((note: NoteType) => (
         <Note key={note.id} note={note} />
       ))}
     </div>

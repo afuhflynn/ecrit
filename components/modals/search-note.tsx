@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import useModal from "@/hooks/use-modal";
 import { KEYS } from "@/lib/keys";
 import { QUERIES } from "@/lib/query";
-import { Notes } from "@/lib/types";
+import { Notes, PaginatedNotes } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
@@ -20,14 +20,14 @@ export const SearchNote = () => {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const listRef = useRef<HTMLDivElement>(null);
 
-  const { data, isLoading, error } = useQuery({
+  const { data, isLoading, error } = useQuery<PaginatedNotes>({
     queryKey: [KEYS.NOTES],
     queryFn: () => QUERIES.NOTES.all(),
     enabled: isSearchNoteModalOpen,
   });
 
   const filteredNotes =
-    data?.filter((note: Notes) =>
+    data?.data?.filter((note: Notes) =>
       note.title.toLowerCase().includes(search.toLowerCase())
     ) ?? [];
 

@@ -1,14 +1,19 @@
 import { NoteSchema } from "./zod-schema";
 import axios from "axios";
 
+type NotesParams = {
+  search?: string;
+  page?: number;
+  limit?: number;
+};
+
 export const QUERIES = {
   NOTES: {
     create: async (data: NoteSchema) => {
       const result = await axios.post("/api/notes", data);
       return result.data;
     },
-    all: async (search?: string) => {
-      const params = search ? { search } : {};
+    all: async (params?: NotesParams) => {
       const result = await axios.get("/api/notes", { params });
       return result.data;
     },

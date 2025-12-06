@@ -3,7 +3,7 @@ import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
 import { db } from "@/db/drizzle";
 import { notes } from "@/db/schema";
-import { eq, desc, and, or, ilike } from "drizzle-orm";
+import { eq, desc, and, or, ilike, count } from "drizzle-orm";
 import { nanoid } from "nanoid";
 import { noteSchema } from "@/lib/zod-schema";
 
@@ -18,6 +18,12 @@ export const GET = async (request: NextRequest) => {
 
   const searchParams = request.nextUrl.searchParams;
   const search = searchParams.get("search");
+  const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
+  const limit = Math.min(
+    50,
+    Math.max(1, parseInt(searchParams.get("limit") || "10", 10))
+  );
+  const offset = (page - 1) * limit;
 
   const whereConditions = search
     ? and(
@@ -29,13 +35,30 @@ export const GET = async (request: NextRequest) => {
       )
     : eq(notes.userId, session.user.id);
 
-  const userNotes = await db
-    .select()
-    .from(notes)
-    .where(whereConditions)
-    .orderBy(desc(notes.createdAt));
+  const [userNotes, totalResult] = await Promise.all([
+    db
+      .select()
+      .from(notes)
+      .where(whereConditions)
+      .orderBy(desc(notes.createdAt))
+      .limit(limit)
+      .offset(offset),
+    db.select({ count: count() }).from(notes).where(whereConditions),
+  ]);
 
-  return NextResponse.json(userNotes);
+  const total = totalResult[0]?.count ?? 0;
+  const totalPages = Math.ceil(total / limit);
+
+  return NextResponse.json({
+    data: userNotes,
+    pagination: {
+      page,
+      limit,
+      total,
+      totalPages,
+      hasMore: page < totalPages,
+    },
+  });
 };
 
 export const POST = async (request: NextRequest) => {

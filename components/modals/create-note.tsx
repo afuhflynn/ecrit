@@ -18,7 +18,7 @@ import { LoadingButton } from "@/components/ui/loading-button";
 import useModal from "@/hooks/use-modal";
 import { KEYS } from "@/lib/keys";
 import { QUERIES } from "@/lib/query";
-import { Notes } from "@/lib/types";
+import { Notes, PaginatedNotes } from "@/lib/types";
 import { NoteSchema, noteSchema } from "@/lib/zod-schema";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -41,7 +41,7 @@ export const CreateNote = () => {
     },
   });
 
-  const { data: existingNotes } = useQuery<Notes[]>({
+  const { data: notesResponse } = useQuery<PaginatedNotes>({
     queryKey: [KEYS.NOTES],
     queryFn: () => QUERIES.NOTES.all(),
     enabled: isCreateModalOpen,
@@ -50,9 +50,9 @@ export const CreateNote = () => {
   const slug = form.watch("slug");
 
   const slugExists = useMemo(() => {
-    if (!existingNotes || !slug) return false;
-    return existingNotes.some((note) => note.slug === slug);
-  }, [existingNotes, slug]);
+    if (!notesResponse?.data || !slug) return false;
+    return notesResponse.data.some((note) => note.slug === slug);
+  }, [notesResponse, slug]);
 
   useEffect(() => {
     if (slugExists) {
@@ -70,12 +70,31 @@ export const CreateNote = () => {
     onSuccess: (data: Notes) => {
       toast.success("Note created successfully");
       form.reset();
-      queryClient.setQueryData([KEYS.NOTES], (old: Notes[] | undefined) => {
-        if (!old) {
-          return [data];
+      queryClient.setQueryData(
+        [KEYS.NOTES],
+        (old: PaginatedNotes | undefined) => {
+          if (!old) {
+            return {
+              data: [data],
+              pagination: {
+                page: 1,
+                limit: 10,
+                total: 1,
+                totalPages: 1,
+                hasMore: false,
+              },
+            };
+          }
+          return {
+            ...old,
+            data: [data, ...old.data],
+            pagination: {
+              ...old.pagination,
+              total: old.pagination.total + 1,
+            },
+          };
         }
-        return [data, ...old];
-      });
+      );
       router.push(`/n/${data.slug}`);
       onClose();
     },
