@@ -29,15 +29,53 @@ import EditorMenu from "./menu";
 import SlashCommands from "./slash-commands";
 
 import { useNote } from "@/contex/note";
-import { getLocalStorageKey, highlightCodeblocks } from "@/lib/localstorage";
+import { getLocalStorageKey } from "@/lib/localstorage";
+import { QUERIES } from "@/lib/query";
 import { noteContentSchema, NoteContentSchema } from "@/lib/zod-schema";
+import { useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { toast } from "sonner";
+import { useCallback } from "react";
 
 const extensions = [...defaultExtensions, slashCommand];
 
-const defaultValue = {
+const defaultValue: JSONContent = {
   type: "doc",
+  content: [],
+};
+
+// Convert plain text to editor JSON format
+const textToEditorContent = (text: string): JSONContent => {
+  if (!text) return defaultValue;
+
+  const paragraphs = text.split("\n").filter((p) => p.trim() !== "");
+
+  return {
+    type: "doc",
+    content: paragraphs.map((paragraph) => ({
+      type: "paragraph",
+      content: [{ type: "text", text: paragraph }],
+    })),
+  };
+};
+
+// Parse content - handles both JSON and plain text
+const parseContent = (content: string): JSONContent => {
+  if (!content) return defaultValue;
+
+  try {
+    const parsed = JSON.parse(content);
+    // Check if it's valid editor JSON format
+    if (parsed.type === "doc") {
+      return parsed;
+    }
+    // If it's JSON but not editor format, treat as text
+    return textToEditorContent(content);
+  } catch {
+    // Not JSON, treat as plain text
+    return textToEditorContent(content);
+  }
 };
 
 export default function Editor() {
@@ -73,9 +111,50 @@ export default function Editor() {
     }
   }, [data, form]);
 
+  const { mutate: saveNote, isPending: isSaving } = useMutation({
+    mutationFn: (formData: NoteContentSchema) =>
+      QUERIES.NOTES.update(data?.id as string, formData),
+    onSuccess: () => {
+      toast.success("Note saved successfully");
+    },
+    onError: (error: unknown) => {
+      const axiosError = error as { response?: { data?: { error?: string } } };
+      const message = axiosError.response?.data?.error || "Failed to save note";
+      toast.error(message);
+    },
+  });
+
+  const handleSave = useCallback(() => {
+    if (!data?.id || isSaving) return;
+
+    const formData = form.getValues();
+    if (!formData.title || !formData.slug) {
+      toast.error("Title is required");
+      return;
+    }
+
+    if (editorRef.current) {
+      const json = editorRef.current.getJSON();
+      formData.content = JSON.stringify(json);
+    }
+
+    saveNote(formData);
+  }, [data?.id, form, isSaving, saveNote]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "s") {
+        e.preventDefault();
+        handleSave();
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [handleSave]);
+
   const {
     register,
-    handleSubmit,
     formState: { errors },
   } = form;
 
@@ -142,19 +221,12 @@ export default function Editor() {
   useEffect(() => {
     if (isLoading) return;
 
-    if (data?.content && data.content) {
-      setInitialContent(JSON.parse(data.content));
+    if (data?.content) {
+      setInitialContent(parseContent(data.content));
       return;
     }
 
     setInitialContent(defaultValue);
-  }, [isLoading, data?.content]);
-
-  useEffect(() => {
-    if (isLoading) return;
-    if (JSON.stringify(data?.content) === JSON.stringify(data?.content)) {
-      return;
-    }
   }, [isLoading, data?.content]);
 
   useEffect(() => {
@@ -191,6 +263,7 @@ export default function Editor() {
             onClick={() => editorRef.current?.commands.focus()}
           >
             <EditorContent
+              key={data?.id}
               immediatelyRender={false}
               initialContent={initialContent ?? undefined}
               extensions={extensions}
