@@ -20,4 +20,9 @@ export type PaginatedNotes = {
   pagination: Pagination;
 };
 
-export type ModalTypes = "create-note" | "search" | "settings" | "upload-image";
+export type ModalTypes =
+  | "create-note"
+  | "search"
+  | "settings"
+  | "upload-image"
+  | "upload-youtube";
