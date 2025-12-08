@@ -68,6 +68,8 @@ import { toast } from "sonner";
 import SoundWave from "./sound-wave";
 import { KEYS } from "@/lib/keys";
 import { cn } from "@/lib/utils";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
 
 const extensions = [...defaultExtensions, slashCommand];
 
@@ -119,10 +121,14 @@ export default function Editor() {
   const [isRecording, setIsRecording] = useState(false);
   const [transcript, setTranscript] = useState("");
   const lastEscPressRef = useRef<number>(0);
+  const singleEscTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   const uploadFn = useUploadFn();
   const queryClient = useQueryClient();
   const [wordCount, setWordCount] = useState(0);
+  const [showExitWarning, setShowExitWarning] = useState(false);
+  const pendingExitRef = useRef(false);
+  const router = useRouter();
 
   const form = useForm<NoteContentSchema>({
     resolver: zodResolver(noteContentSchema),
@@ -150,11 +156,17 @@ export default function Editor() {
       toast.success("Note saved successfully");
       form.reset(form.getValues());
       queryClient.invalidateQueries({ queryKey: [KEYS.NOTES] });
+      if (pendingExitRef.current) {
+        pendingExitRef.current = false;
+        setShowExitWarning(false);
+        router.push("/n");
+      }
     },
     onError: (error: unknown) => {
       const axiosError = error as { response?: { data?: { error?: string } } };
       const message = axiosError.response?.data?.error || "Failed to save note";
       toast.error(message);
+      pendingExitRef.current = false;
     },
   });
 
@@ -174,6 +186,21 @@ export default function Editor() {
 
     saveNote(formData);
   }, [data?.id, form, isSaving, saveNote]);
+
+  const handleSaveAndExit = useCallback(() => {
+    pendingExitRef.current = true;
+    handleSave();
+  }, [handleSave]);
+
+  const handleDiscardAndExit = useCallback(() => {
+    setShowExitWarning(false);
+    router.push("/n");
+  }, [router]);
+
+  const {
+    register,
+    formState: { isDirty },
+  } = form;
 
   const startVoiceRecording = useCallback(async () => {
     console.log("Starting voice recording...");
@@ -283,6 +310,20 @@ export default function Editor() {
       }
 
       if (e.key === "Escape") {
+        const now = Date.now();
+        const isDoubleEsc = now - lastEscPressRef.current < 300;
+        lastEscPressRef.current = now;
+
+        if (singleEscTimeoutRef.current) {
+          clearTimeout(singleEscTimeoutRef.current);
+          singleEscTimeoutRef.current = null;
+        }
+
+        if (showExitWarning) {
+          setShowExitWarning(false);
+          return;
+        }
+
         if (isRecording) {
           stopVoiceRecording();
           setIsRecording(false);
@@ -290,23 +331,34 @@ export default function Editor() {
           return;
         }
 
-        const now = Date.now();
-        if (now - lastEscPressRef.current < 300) {
+        if (isDoubleEsc) {
           setIsRecording(true);
           await startVoiceRecording();
+        } else {
+          singleEscTimeoutRef.current = setTimeout(() => {
+            if (isDirty) {
+              setShowExitWarning(true);
+            } else {
+              router.push("/n");
+            }
+          }, 300);
         }
-        lastEscPressRef.current = now;
       }
     };
 
     document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [handleSave, isRecording, startVoiceRecording, stopVoiceRecording]);
-
-  const {
-    register,
-    formState: { isDirty },
-  } = form;
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [
+    handleSave,
+    isRecording,
+    startVoiceRecording,
+    stopVoiceRecording,
+    isDirty,
+    showExitWarning,
+    router,
+  ]);
 
   const updateFormFromEditor = (editor: EditorInstance) => {
     const markdown = editor.storage.markdown.getMarkdown();
@@ -498,6 +550,40 @@ export default function Editor() {
                       {transcript}
                     </p>
                   )}
+                </motion.div>
+              )}
+              {showExitWarning && (
+                <motion.div
+                  initial={{ opacity: 0, y: 100 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 100 }}
+                  transition={{ type: "spring", damping: 25, stiffness: 300 }}
+                  className="fixed bottom-0 inset-x-0 z-50 bg-background border-t shadow-lg"
+                >
+                  <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between gap-4">
+                    <div className="flex flex-col gap-1">
+                      <span className="font-medium">Unsaved changes</span>
+                      <span className="text-sm text-muted-foreground">
+                        Save your note before leaving
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleDiscardAndExit}
+                      >
+                        Discard
+                      </Button>
+                      <Button
+                        size="sm"
+                        onClick={handleSaveAndExit}
+                        disabled={isSaving}
+                      >
+                        {isSaving ? "Saving..." : "Save & Exit"}
+                      </Button>
+                    </div>
+                  </div>
                 </motion.div>
               )}
             </AnimatePresence>
