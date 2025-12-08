@@ -67,6 +67,7 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import SoundWave from "./sound-wave";
 import { KEYS } from "@/lib/keys";
+import { cn } from "@/lib/utils";
 
 const extensions = [...defaultExtensions, slashCommand];
 
@@ -121,6 +122,7 @@ export default function Editor() {
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   const uploadFn = useUploadFn();
   const queryClient = useQueryClient();
+  const [wordCount, setWordCount] = useState(0);
 
   const form = useForm<NoteContentSchema>({
     resolver: zodResolver(noteContentSchema),
@@ -146,6 +148,7 @@ export default function Editor() {
       QUERIES.NOTES.update(data?.id as string, formData),
     onSuccess: () => {
       toast.success("Note saved successfully");
+      form.reset(form.getValues());
       queryClient.invalidateQueries({ queryKey: [KEYS.NOTES] });
     },
     onError: (error: unknown) => {
@@ -302,12 +305,12 @@ export default function Editor() {
 
   const {
     register,
-    formState: { errors },
+    formState: { isDirty },
   } = form;
 
   const updateFormFromEditor = (editor: EditorInstance) => {
     const markdown = editor.storage.markdown.getMarkdown();
-    form.setValue("content", markdown);
+    form.setValue("content", markdown, { shouldDirty: true });
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -354,6 +357,8 @@ export default function Editor() {
 
   const debouncedUpdates = useDebouncedCallback(
     async (editor: EditorInstance) => {
+      const characterCount = editor.storage.characterCount.words();
+      setWordCount(characterCount);
       const markdown = editor.storage.markdown.getMarkdown();
       window.localStorage.setItem(
         getLocalStorageKey("-markdown", data?.id as string),
@@ -386,14 +391,16 @@ export default function Editor() {
     form.setValue("slug", slug);
   }, [form.watch("title")]);
 
+  const status = isSaving ? "Saving..." : isDirty ? "Not saved" : "Saved";
+
   if (!initialContent) return null;
 
   if (isLoading) return <div>Loading...</div>;
 
   return (
-    <>
+    <div className="flex flex-col bg-muted/50">
       <div
-        className="relative w-full max-w-6xl mx-auto min-h-screen py-10 flex flex-col"
+        className="relative w-full max-w-6xl mx-auto min-h-screen p-10 flex gap-4 flex-col border-x bg-background"
         ref={editorContainerRef}
       >
         <EditorRoot>
@@ -402,7 +409,7 @@ export default function Editor() {
             autoFocus
             placeholder="Note Title"
             {...register("title")}
-            className="scrollbar-hide mb-2 w-full resize-none bg-transparent font-semibold prose-headings:font-semibold text-4xl focus:outline-hidden focus:ring-0 sm:px-4"
+            className="scrollbar-hide mb-2 w-full resize-none bg-transparent font-semibold prose-headings:font-semibold text-4xl outline-none"
             onKeyDown={handleKeyDown}
           />
 
@@ -415,7 +422,7 @@ export default function Editor() {
               immediatelyRender={false}
               initialContent={initialContent ?? undefined}
               extensions={extensions}
-              className="rounded-xl cursor-text! p-4 size-full flex-1"
+              className="rounded-xl cursor-text! size-full flex-1"
               editorProps={{
                 handleDOMEvents: {
                   keydown: (_view, event) => handleCommandNavigation(event),
@@ -431,6 +438,7 @@ export default function Editor() {
               }}
               onCreate={({ editor }) => {
                 editorRef.current = editor;
+                setWordCount(editor.storage.characterCount.words());
               }}
               onUpdate={({ editor }) => {
                 editorRef.current = editor;
@@ -493,6 +501,24 @@ export default function Editor() {
                 </motion.div>
               )}
             </AnimatePresence>
+            <div
+              className={cn(
+                "fixed bottom-0 inset-x-0 max-w-6xl mx-auto h-5 border-t flex items-center justify-between text-sm text-muted-foreground px-4"
+              )}
+            >
+              <span>{wordCount} words</span>
+              <div className="flex items-center gap-2">
+                {isRecording && <span>Recording...</span>}
+                <span
+                  className={cn(
+                    "transition-colors duration-150",
+                    isDirty && "text-yellow-500"
+                  )}
+                >
+                  {status}
+                </span>
+              </div>
+            </div>
           </div>
         </EditorRoot>
         <div
@@ -500,6 +526,6 @@ export default function Editor() {
           ref={bottomPaddingRef}
         />
       </div>
-    </>
+    </div>
   );
 }
