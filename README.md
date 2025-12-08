@@ -1,36 +1,119 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# écrit – Writing Without Friction
+
+écrit is a minimal, distraction-free writing app built for people who just want to write. Most note apps become bloated over time and force you to navigate menus and interfaces before you can even start. écrit removes all of that.
+
+**You open it and write instantly. The UI stays invisible until you call it.**
+
+## Features
+
+- **Instant Writing** – No menus, no setup. Just open and write.
+- **Keyboard-First** – Everything is controlled via shortcuts.
+- **Voice Transcription** – Speak and watch your words appear.
+- **Autosave** – Your work is always safe.
+- **Minimal UI** – The interface stays out of your way.
+
+## Keyboard Shortcuts
+
+| Shortcut           | Action                 |
+| ------------------ | ---------------------- |
+| `Ctrl + K`         | Open notes search      |
+| `Ctrl + Alt + N`   | Create new note        |
+| `Ctrl + Shift + P` | Open settings          |
+| `Ctrl + S`         | Save note              |
+| `Esc + Esc`        | Toggle voice recording |
+
+écrit## Tech Stack
+
+- **Framework** – Next.js 16 with React 19
+- **Database** – PostgreSQL with Drizzle ORM
+- **Auth** – Better Auth
+- **Editor** – Novel (Tiptap-based)
+- **Styling** – Tailwind CSS
+- **State** – Zustand + TanStack Query
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+
+- Node.js 18+ or Bun
+- PostgreSQL database
+- Docker (optional)
+
+### Installation
+
+1. Clone the repository:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone https://github.com/yourusername/ecrit.git
+cd ecrit
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. Install dependencies:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+bun install
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+3. Set up environment variables:
 
-## Learn More
+```bash
+cp .env.example .env
+```
 
-To learn more about Next.js, take a look at the following resources:
+4. Start the database (using Docker):
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+docker compose up -d
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+5. Run database migrations:
 
-## Deploy on Vercel
+```bash
+bun run db:push
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+6. Start the development server:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+bun run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000) to start writing.
+
+### HTTPS Development (for voice recording)
+
+Voice transcription requires HTTPS. Run with:
+
+```bash
+bun run dev:https
+```
+
+## Project Structure
+
+```
+ecrit/
+├── app/                 # Next.js app router
+│   ├── (app)/          # Authenticated routes
+│   ├── (auth)/         # Auth routes
+│   └── api/            # API routes
+├── components/         # React components
+│   ├── editor/         # Novel editor
+│   ├── modals/         # Modal dialogs
+│   └── ui/             # UI primitives
+├── db/                 # Database schema
+├── hooks/              # Custom hooks
+├── lib/                # Utilities
+└── contex/             # React contexts
+```
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+
+## License
+
+MIT
+
+---
+
+**écrit is writing the way it should be.**

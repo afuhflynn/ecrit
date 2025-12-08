@@ -32,7 +32,7 @@ export default function Home() {
 {
   /*
 
-# **Écrit — writing without friction**
+# **écrit — writing without friction**
 
 ### a blank canvas for your mind.
 
