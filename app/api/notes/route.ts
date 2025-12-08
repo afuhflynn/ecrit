@@ -6,6 +6,14 @@ import { notes } from "@/db/schema";
 import { eq, desc, and, or, ilike, count } from "drizzle-orm";
 import { nanoid } from "nanoid";
 import { noteSchema } from "@/lib/zod-schema";
+import {
+  cacheKeys,
+  getCache,
+  setCache,
+  deleteCacheByPattern,
+} from "@/lib/cache";
+
+const CACHE_TTL = 60 * 5;
 
 export const GET = async (request: NextRequest) => {
   const session = await auth.api.getSession({
@@ -24,6 +32,18 @@ export const GET = async (request: NextRequest) => {
     Math.max(1, parseInt(searchParams.get("limit") || "10", 10))
   );
   const offset = (page - 1) * limit;
+
+  const cacheKey = cacheKeys.notesList(
+    session.user.id,
+    String(page),
+    String(limit),
+    search || ""
+  );
+
+  const cached = await getCache(cacheKey);
+  if (cached) {
+    return NextResponse.json(cached);
+  }
 
   const whereConditions = search
     ? and(
@@ -49,7 +69,7 @@ export const GET = async (request: NextRequest) => {
   const total = totalResult[0]?.count ?? 0;
   const totalPages = Math.ceil(total / limit);
 
-  return NextResponse.json({
+  const response = {
     data: userNotes,
     pagination: {
       page,
@@ -58,7 +78,11 @@ export const GET = async (request: NextRequest) => {
       totalPages,
       hasMore: page < totalPages,
     },
-  });
+  };
+
+  await setCache(cacheKey, response, CACHE_TTL);
+
+  return NextResponse.json(response);
 };
 
 export const POST = async (request: NextRequest) => {
@@ -83,6 +107,8 @@ export const POST = async (request: NextRequest) => {
         userId: session.user.id,
       })
       .returning();
+
+    await deleteCacheByPattern(`notes:list:${session.user.id}:*`);
 
     return NextResponse.json(newNote[0], { status: 201 });
   } catch (error: unknown) {
