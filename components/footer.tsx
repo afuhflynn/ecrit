@@ -15,7 +15,7 @@ export const Footer = () => {
       </p>
 
       <Button variant="ghost" size="icon" asChild>
-        <Link href={siteConfig.links.github}>
+        <Link href={siteConfig.links.github} target="_blank">
           <Icons.github className="size-4" />
         </Link>
       </Button>
