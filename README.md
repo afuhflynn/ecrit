@@ -22,7 +22,7 @@
 | `Ctrl + S`         | Save note              |
 | `Esc + Esc`        | Toggle voice recording |
 
-écrit## Tech Stack
+Tech Stack
 
 - **Framework** – Next.js 16 with React 19
 - **Database** – PostgreSQL with Drizzle ORM
@@ -41,42 +41,28 @@
 
 ### Installation
 
-1. Clone the repository:
+1. Fork this repository.
+
+2. Clone the repository:
 
 ```bash
 git clone https://github.com/yourusername/ecrit.git
 cd ecrit
 ```
 
-2. Install dependencies:
+3. First time setting up dev env, use the script
 
-```bash
-bun install
-```
+- make it executable
+  ```bash
+  chmod +x scripts/run-dev.sh
+  ```
+- run the script
 
-3. Set up environment variables:
+  ```bash
+  ./scripts/run-dev.sh
+  ```
 
-```bash
-cp .env.example .env
-```
-
-4. Start the database (using Docker):
-
-```bash
-docker compose up -d
-```
-
-5. Run database migrations:
-
-```bash
-bun run db:push
-```
-
-6. Start the development server:
-
-```bash
-bun run dev
-```
+  this will setup the entire dev env for if this is the first time running it locally and from there if it's the second time, you can just run `bun run dev`
 
 Open [http://localhost:3000](http://localhost:3000) to start writing.
 
