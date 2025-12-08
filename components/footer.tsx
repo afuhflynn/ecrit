@@ -2,6 +2,8 @@
 
 import { Button } from "./ui/button";
 import { Icons } from "./ui/icons";
+import Link from "next/link";
+import { siteConfig } from "@/lib/site";
 
 export const Footer = () => {
   const currentYear = new Date().getFullYear();
@@ -12,8 +14,10 @@ export const Footer = () => {
         reserved.
       </p>
 
-      <Button variant="ghost" size="icon">
-        <Icons.github />
+      <Button variant="ghost" size="icon" asChild>
+        <Link href={siteConfig.links.github}>
+          <Icons.github className="size-4" />
+        </Link>
       </Button>
     </div>
   );

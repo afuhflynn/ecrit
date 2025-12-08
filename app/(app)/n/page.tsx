@@ -36,12 +36,12 @@ const page = () => {
   const { onOpen } = useModal();
   return (
     <Container className="gap-20">
-      <div className="flex items-center justify-between w-full">
+      <div className="flex items-center justify-between w-full sticky top-0 bg-background p-2">
         <h1 className="text-2xl font-bold font-mono">ecrit.</h1>
         <UserButton />
       </div>
       <div className="flex items-center flex-col w-full gap-6 flex-1">
-        <div className="grid grid-cols-3 gap-6 w-full">
+        <div className="grid md:grid-cols-3 grid-cols-1 md:gap-6 gap-2 w-full">
           {Items.map((item) => (
             <button
               className="flex flex-col border p-4 gap-2 bg-muted/50 active:scale-98 active:bg-muted/50 transition-all"
