@@ -70,31 +70,7 @@ export const CreateNote = () => {
     onSuccess: (data: Notes) => {
       toast.success("Note created successfully");
       form.reset();
-      queryClient.setQueryData(
-        [KEYS.NOTES],
-        (old: PaginatedNotes | undefined) => {
-          if (!old) {
-            return {
-              data: [data],
-              pagination: {
-                page: 1,
-                limit: 10,
-                total: 1,
-                totalPages: 1,
-                hasMore: false,
-              },
-            };
-          }
-          return {
-            ...old,
-            data: [data, ...old.data],
-            pagination: {
-              ...old.pagination,
-              total: old.pagination.total + 1,
-            },
-          };
-        }
-      );
+      queryClient.invalidateQueries({ queryKey: [KEYS.NOTES] });
       router.push(`/n/${data.slug}`);
       onClose();
     },

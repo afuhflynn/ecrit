@@ -13,7 +13,7 @@ import { LoadingButton } from "@/components/ui/loading-button";
 import useModal from "@/hooks/use-modal";
 import { KEYS } from "@/lib/keys";
 import { QUERIES } from "@/lib/query";
-import { Notes, PaginatedNotes } from "@/lib/types";
+import { Notes } from "@/lib/types";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -28,23 +28,12 @@ export const DeleteNote = () => {
 
   const { mutate: deleteNote, isPending } = useMutation({
     mutationFn: (id: string) => QUERIES.NOTES.delete(id),
-    onSuccess: () => {
+    onSuccess: async () => {
       toast.success("Note deleted successfully");
-      queryClient.setQueryData(
-        [KEYS.NOTES],
-        (old: PaginatedNotes | undefined) => {
-          if (!old) return old;
-          return {
-            ...old,
-            data: old.data.filter((n) => n.id !== note?.id),
-            pagination: {
-              ...old.pagination,
-              total: old.pagination.total - 1,
-            },
-          };
-        }
-      );
-      queryClient.invalidateQueries({ queryKey: [KEYS.NOTES] });
+      queryClient.invalidateQueries({
+        queryKey: [KEYS.NOTES],
+        type: "all",
+      });
       router.push("/n");
       onClose();
     },
@@ -82,7 +71,11 @@ export const DeleteNote = () => {
                 ? This action cannot be undone.
               </p>
               <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={onClose} disabled={isPending}>
+                <Button
+                  variant="outline"
+                  onClick={onClose}
+                  disabled={isPending}
+                >
                   Cancel
                 </Button>
                 <LoadingButton

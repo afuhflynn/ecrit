@@ -10,7 +10,7 @@ import {
   cacheKeys,
   getCache,
   setCache,
-  deleteCacheByPattern,
+  deleteCacheKeys,
 } from "@/lib/cache";
 
 const CACHE_TTL = 60 * 5;
@@ -108,7 +108,7 @@ export const POST = async (request: NextRequest) => {
       })
       .returning();
 
-    await deleteCacheByPattern(`notes:list:${session.user.id}:*`);
+    await deleteCacheKeys(cacheKeys.allNotesListKeys(session.user.id));
 
     return NextResponse.json(newNote[0], { status: 201 });
   } catch (error: unknown) {

@@ -9,6 +9,7 @@ import {
   DialogContentWrapper,
 } from "@/components/ui/dialog";
 import useModal from "@/hooks/use-modal";
+import { SHORTCUTS, formatShortcut } from "@/hooks/use-shortcuts";
 import { authClient } from "@/lib/auth-client";
 import { useTheme } from "next-themes";
 import { LogOut, Moon, Sun, Monitor, Check } from "lucide-react";
@@ -144,22 +145,14 @@ export const Settings = () => {
                   Keyboard Shortcuts
                 </h3>
                 <div className="space-y-1 text-xs text-muted-foreground">
-                  <div className="flex justify-between">
-                    <span>New Note</span>
-                    <kbd className="px-1.5 py-0.5 bg-muted rounded">
-                      Ctrl+Alt+N
-                    </kbd>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Search</span>
-                    <kbd className="px-1.5 py-0.5 bg-muted rounded">Ctrl+K</kbd>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Settings</span>
-                    <kbd className="px-1.5 py-0.5 bg-muted rounded">
-                      Ctrl+Shift+P
-                    </kbd>
-                  </div>
+                  {SHORTCUTS.map((shortcut) => (
+                    <div key={shortcut.modal} className="flex justify-between">
+                      <span>{shortcut.label}</span>
+                      <kbd className="px-1.5 py-0.5 bg-muted rounded">
+                        {formatShortcut(shortcut)}
+                      </kbd>
+                    </div>
+                  ))}
                   <div className="flex justify-between">
                     <span>Save</span>
                     <kbd className="px-1.5 py-0.5 bg-muted rounded">Ctrl+S</kbd>

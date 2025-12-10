@@ -9,7 +9,7 @@ import {
   getCache,
   setCache,
   deleteCache,
-  deleteCacheByPattern,
+  deleteCacheKeys,
 } from "@/lib/cache";
 
 type Params = { params: Promise<{ id: string }> };
@@ -77,6 +77,7 @@ export const PATCH = async (request: NextRequest, { params }: Params) => {
       ...(title && { title }),
       ...(slug && { slug }),
       ...(content !== undefined && { content }),
+      updatedAt: new Date(),
     })
     .where(and(eq(notes.id, id), eq(notes.userId, session.user.id)))
     .returning();
@@ -84,7 +85,7 @@ export const PATCH = async (request: NextRequest, { params }: Params) => {
   await Promise.all([
     deleteCache(cacheKeys.note(session.user.id, id)),
     deleteCache(cacheKeys.noteBySlug(session.user.id, existingNote[0].slug)),
-    deleteCacheByPattern(`notes:list:${session.user.id}:*`),
+    deleteCacheKeys(cacheKeys.allNotesListKeys(session.user.id)),
   ]);
 
   return NextResponse.json(updatedNote[0]);
@@ -118,7 +119,7 @@ export const DELETE = async (_request: NextRequest, { params }: Params) => {
   await Promise.all([
     deleteCache(cacheKeys.note(session.user.id, id)),
     deleteCache(cacheKeys.noteBySlug(session.user.id, existingNote[0].slug)),
-    deleteCacheByPattern(`notes:list:${session.user.id}:*`),
+    deleteCacheKeys(cacheKeys.allNotesListKeys(session.user.id)),
   ]);
 
   return NextResponse.json({ message: "Note deleted successfully" });

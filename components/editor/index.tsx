@@ -139,6 +139,11 @@ export default function Editor() {
     },
   });
 
+  const {
+    register,
+    formState: { isDirty },
+  } = form;
+
   useEffect(() => {
     if (data) {
       form.reset({
@@ -152,10 +157,10 @@ export default function Editor() {
   const { mutate: saveNote, isPending: isSaving } = useMutation({
     mutationFn: (formData: NoteContentSchema) =>
       QUERIES.NOTES.update(data?.id as string, formData),
-    onSuccess: () => {
+    onSuccess: async () => {
       toast.success("Note saved successfully");
       form.reset(form.getValues());
-      queryClient.invalidateQueries({ queryKey: [KEYS.NOTES] });
+      await queryClient.refetchQueries({ queryKey: [KEYS.NOTES], type: "all" });
       if (pendingExitRef.current) {
         pendingExitRef.current = false;
         setShowExitWarning(false);
@@ -171,6 +176,7 @@ export default function Editor() {
   });
 
   const handleSave = useCallback(() => {
+    if (!isDirty) return;
     if (!data?.id || isSaving) return;
 
     const formData = form.getValues();
@@ -185,7 +191,7 @@ export default function Editor() {
     }
 
     saveNote(formData);
-  }, [data?.id, form, isSaving, saveNote]);
+  }, [data?.id, form, isSaving, saveNote, isDirty]);
 
   const handleSaveAndExit = useCallback(() => {
     pendingExitRef.current = true;
@@ -196,11 +202,6 @@ export default function Editor() {
     setShowExitWarning(false);
     router.push("/n");
   }, [router]);
-
-  const {
-    register,
-    formState: { isDirty },
-  } = form;
 
   const startVoiceRecording = useCallback(async () => {
     console.log("Starting voice recording...");

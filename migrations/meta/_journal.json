@@ -15,6 +15,13 @@
       "when": 1764980419659,
       "tag": "0001_parallel_rawhide_kid",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1765326713749,
+      "tag": "0002_true_thor",
+      "breakpoints": true
     }
   ]
 }

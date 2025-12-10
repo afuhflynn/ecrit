@@ -9,7 +9,7 @@ import { usePathname } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import { KEYS } from "@/lib/keys";
 
-type Shortcut = {
+export type Shortcut = {
   key: string;
   ctrl?: boolean;
   shift?: boolean;
@@ -17,21 +17,24 @@ type Shortcut = {
   modal: ModalTypes;
   requiresAuth: boolean;
   requiresNote?: boolean;
+  label: string;
 };
 
-const SHORTCUTS: Shortcut[] = [
+export const SHORTCUTS: Shortcut[] = [
   {
     key: "n",
     ctrl: true,
     alt: true,
     modal: "create-note",
     requiresAuth: true,
+    label: "New Note",
   },
   {
     key: "k",
     ctrl: true,
     modal: "search",
     requiresAuth: true,
+    label: "Search",
   },
   {
     key: "p",
@@ -39,6 +42,7 @@ const SHORTCUTS: Shortcut[] = [
     shift: true,
     modal: "settings",
     requiresAuth: true,
+    label: "Settings",
   },
   {
     key: "d",
@@ -47,6 +51,7 @@ const SHORTCUTS: Shortcut[] = [
     modal: "delete-note",
     requiresAuth: true,
     requiresNote: true,
+    label: "Delete Note",
   },
   {
     key: "s",
@@ -55,8 +60,18 @@ const SHORTCUTS: Shortcut[] = [
     modal: "share-note",
     requiresAuth: true,
     requiresNote: true,
+    label: "Share Note",
   },
 ];
+
+export const formatShortcut = (shortcut: Shortcut): string => {
+  const parts: string[] = [];
+  if (shortcut.ctrl) parts.push("Ctrl");
+  if (shortcut.alt) parts.push("Alt");
+  if (shortcut.shift) parts.push("Shift");
+  parts.push(shortcut.key.toUpperCase());
+  return parts.join("+");
+};
 
 const matchShortcut = (e: KeyboardEvent, shortcut: Shortcut): boolean => {
   const ctrlMatch = shortcut.ctrl
@@ -104,7 +119,10 @@ export const useShortcuts = () => {
               return;
             }
             const slug = slugMatch[1];
-            const noteData = queryClient.getQueryData<Notes>([KEYS.NOTES, slug]);
+            const noteData = queryClient.getQueryData<Notes>([
+              KEYS.NOTES,
+              slug,
+            ]);
             if (!noteData) {
               toast.error("Note data not available");
               return;
