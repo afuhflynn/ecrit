@@ -42,4 +42,7 @@ next-env.d.ts
 
 certificates
 .nvii/
-.env*.local
+
+# tempo
+**/tempobook/dynamic/
+**/tempobook/storyboards/

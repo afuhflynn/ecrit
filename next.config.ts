@@ -4,6 +4,7 @@ import { siteConfig } from "@/lib/site";
 const nextConfig: NextConfig = {
   /* config options here */
   reactCompiler: true,
+  transpilePackages: ["novel"],
   turbopack: {
     root: __dirname,
   },
