@@ -33,8 +33,7 @@ export const generateBlurDataUrl = async (
 
     const base64String = blurredBuffer.toString("base64");
     return `data:image/webp;base64,${base64String}`;
-  } catch (error) {
-    console.error("Error generating blur data URL:", error);
+  } catch {
     return "";
   }
 };
@@ -114,10 +113,6 @@ export const ourFileRouter = {
           await api.deleteFiles(file.key);
         }
 
-        console.error(
-          "onUploadComplete DB error:",
-          error instanceof Error ? error.message : "Unknown error"
-        );
         throw new UploadThingError("Failed to persist uploaded file");
       }
     }),

@@ -18,9 +18,8 @@ export default function AuthPage() {
       if (error) {
         throw new Error(error.message);
       }
-    } catch (error) {
+    } catch {
       toast.error("Failed to sign in");
-      console.error(error);
     } finally {
       setIsLoading(false);
     }
