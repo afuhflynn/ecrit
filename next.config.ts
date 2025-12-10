@@ -4,7 +4,8 @@ import { siteConfig } from "@/lib/site";
 const nextConfig: NextConfig = {
   /* config options here */
   reactCompiler: true,
-  turbopack: {
+  transpilePackages: ["novel"],
+    turbopack: {
     root: __dirname,
   },
   async redirects() {
@@ -15,6 +16,9 @@ const nextConfig: NextConfig = {
         permanent: false,
       },
     ];
+  },
+    compiler: {
+    removeConsole: process.env.NODE_ENV === "production",
   },
 };
 

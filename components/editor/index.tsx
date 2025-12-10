@@ -216,10 +216,8 @@ export default function Editor() {
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: true,
       });
-      console.log("Microphone permission granted!");
       stream.getTracks().forEach((track) => track.stop());
     } catch (error) {
-      console.error("Microphone permission denied:", error);
       toast.error(`Microphone error: ${(error as Error).message}`);
       setIsRecording(false);
       return;
@@ -261,7 +259,6 @@ export default function Editor() {
     };
 
     recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
-      console.error("Speech recognition error:", event.error);
       if (event.error === "not-allowed") {
         toast.error(
           "Microphone access denied. Please allow microphone access in your browser settings."
@@ -277,7 +274,7 @@ export default function Editor() {
         try {
           recognitionRef.current.start();
         } catch {
-          console.error("Failed to restart recognition");
+          // Recognition restart failed silently
         }
       }
     };
@@ -287,8 +284,7 @@ export default function Editor() {
     try {
       recognition.start();
       toast.success("Voice recording started. Press Esc to stop.");
-    } catch (error) {
-      console.error("Failed to start recognition:", error);
+    } catch {
       toast.error("Failed to start voice recognition");
       setIsRecording(false);
     }

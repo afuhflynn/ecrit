@@ -14,13 +14,38 @@
 
 ## Keyboard Shortcuts
 
-| Shortcut           | Action                 |
-| ------------------ | ---------------------- |
-| `Ctrl + K`         | Open notes search      |
-| `Ctrl + Alt + N`   | Create new note        |
-| `Ctrl + Shift + P` | Open settings          |
-| `Ctrl + S`         | Save note              |
-| `Esc + Esc`        | Toggle voice recording |
+### Global Shortcuts
+
+| Shortcut           | Action                                    |
+| ------------------ | ----------------------------------------- |
+| `Ctrl + K`         | Open notes search                         |
+| `Ctrl + Alt + N`   | Create new note                           |
+| `Ctrl + Shift + P` | Open settings                             |
+
+### Editor Shortcuts
+
+| Shortcut           | Action                                    |
+| ------------------ | ----------------------------------------- |
+| `Ctrl + S`         | Save note                                 |
+| `Esc` (single)     | Exit note (shows warning if unsaved)      |
+| `Esc` (in warning) | Dismiss exit warning                      |
+| `Esc` (recording)  | Stop voice recording                      |
+| `Esc + Esc`        | Start voice recording (double-tap < 300ms)|
+
+### Text Formatting
+
+The editor supports standard rich text formatting shortcuts:
+
+| Shortcut           | Action                                    |
+| ------------------ | ----------------------------------------- |
+| `Ctrl + B`         | Bold text                                 |
+| `Ctrl + I`         | Italic text                               |
+| `Ctrl + U`         | Underline text                            |
+| `Ctrl + Shift + X` | Strikethrough text                        |
+| `Ctrl + E`         | Inline code                               |
+| `Ctrl + Alt + 1-6` | Heading levels 1-6                        |
+
+> **Note:** On macOS, use `⌘` (Cmd) instead of `Ctrl`
 
 Tech Stack
 

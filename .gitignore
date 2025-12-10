@@ -42,3 +42,7 @@ next-env.d.ts
 
 certificates
 .nvii/
+
+# tempo
+**/tempobook/dynamic/
+**/tempobook/storyboards/
