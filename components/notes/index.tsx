@@ -105,7 +105,10 @@ export const Notes = () => {
 
 const Note = ({ note }: { note: NoteType }) => {
   return (
-    <Link href={`/n/${note.slug}`} className="p-4 flex items-center gap-4">
+    <Link
+      href={`/n/${note.slug}`}
+      className="p-4 flex items-center gap-4 hover:bg-muted/20"
+    >
       <div className="size-8 flex items-center justify-center border bg-muted/20">
         <Icons.file className="size-4" />
       </div>

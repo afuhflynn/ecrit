@@ -46,6 +46,7 @@ const page = () => {
             <button
               className="flex flex-col border p-4 gap-2 bg-muted/50 active:scale-98 transition-all"
               key={item.title}
+              data-shortcut={item.type}
               onClick={() => onOpen(item.type as ModalTypes)}
             >
               <div className="flex items-center justify-between">

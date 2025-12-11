@@ -9,15 +9,37 @@ import { usePathname } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import { KEYS } from "@/lib/keys";
 
-export type Shortcut = {
+type BaseShortcut = {
   key: string;
   ctrl?: boolean;
   shift?: boolean;
   alt?: boolean;
+  label: string;
+  requiresAuth?: boolean;
+  requiresNote?: boolean;
+};
+
+type ModalShortcut = BaseShortcut & {
+  type: "modal";
   modal: ModalTypes;
   requiresAuth: boolean;
-  requiresNote?: boolean;
-  label: string;
+};
+
+type ActionShortcut = BaseShortcut & {
+  type: "action";
+  action: () => void;
+};
+
+export type Shortcut = ModalShortcut | ActionShortcut;
+
+const triggerButtonActive = (shortcutType: string) => {
+  const button = document.querySelector(`[data-shortcut="${shortcutType}"]`);
+  if (!button) return;
+
+  button.classList.add("shortcut-active");
+  setTimeout(() => {
+    button.classList.remove("shortcut-active");
+  }, 150);
 };
 
 export const SHORTCUTS: Shortcut[] = [
@@ -25,6 +47,7 @@ export const SHORTCUTS: Shortcut[] = [
     key: "n",
     ctrl: true,
     alt: true,
+    type: "modal",
     modal: "create-note",
     requiresAuth: true,
     label: "New Note",
@@ -32,6 +55,7 @@ export const SHORTCUTS: Shortcut[] = [
   {
     key: "k",
     ctrl: true,
+    type: "modal",
     modal: "search",
     requiresAuth: true,
     label: "Search",
@@ -40,6 +64,7 @@ export const SHORTCUTS: Shortcut[] = [
     key: "p",
     ctrl: true,
     shift: true,
+    type: "modal",
     modal: "settings",
     requiresAuth: true,
     label: "Settings",
@@ -48,6 +73,7 @@ export const SHORTCUTS: Shortcut[] = [
     key: "d",
     ctrl: true,
     shift: true,
+    type: "modal",
     modal: "delete-note",
     requiresAuth: true,
     requiresNote: true,
@@ -57,12 +83,13 @@ export const SHORTCUTS: Shortcut[] = [
     key: "s",
     ctrl: true,
     shift: true,
+    type: "modal",
     modal: "share-note",
     requiresAuth: true,
     requiresNote: true,
     label: "Share Note",
   },
-];
+] as const;
 
 export const formatShortcut = (shortcut: Shortcut): string => {
   const parts: string[] = [];
@@ -106,6 +133,16 @@ export const useShortcuts = () => {
         if (matchShortcut(e, shortcut)) {
           e.preventDefault();
           e.stopPropagation();
+
+          if (shortcut.type === "action") {
+            triggerButtonActive(
+              shortcut.label.toLowerCase().replace(/\s+/g, "-")
+            );
+            shortcut.action();
+            return;
+          }
+
+          triggerButtonActive(shortcut.modal);
 
           if (shortcut.requiresAuth && !session?.user) {
             toast.error("Please login to perform this action");

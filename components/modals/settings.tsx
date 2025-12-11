@@ -146,7 +146,7 @@ export const Settings = () => {
                 </h3>
                 <div className="space-y-1 text-xs text-muted-foreground">
                   {SHORTCUTS.map((shortcut) => (
-                    <div key={shortcut.modal} className="flex justify-between">
+                    <div key={shortcut.label} className="flex justify-between">
                       <span>{shortcut.label}</span>
                       <kbd className="px-1.5 py-0.5 bg-muted rounded">
                         {formatShortcut(shortcut)}

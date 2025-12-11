@@ -115,7 +115,7 @@ export const SearchNote = () => {
 
   return (
     <Dialog open={isSearchNoteModalOpen} onOpenChange={onClose}>
-      <DialogContent className="-translate-y-full outline-none min-h-fit max-h-[400px] overflow-hidden p-0">
+      <DialogContent className="outline-none min-h-fit max-h-[400px] overflow-hidden p-0">
         <div className="flex flex-col h-full" onKeyDown={handleKeyDown}>
           <div className="sticky top-0 bg-background z-10 border-b">
             <Input
