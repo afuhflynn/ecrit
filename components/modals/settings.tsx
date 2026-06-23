@@ -35,9 +35,14 @@ export const Settings = () => {
   const listRef = useRef<HTMLDivElement>(null);
 
   const handleSignOut = async () => {
-    await authClient.signOut();
-    onClose();
-    router.push("/");
+    await authClient.signOut({
+      fetchOptions: {
+        onSuccess: () => {
+          router.push("/auth");
+          router.refresh();
+        },
+      },
+    });
   };
 
   const items: SettingItem[] = [
@@ -120,7 +125,7 @@ export const Settings = () => {
                     onClick={item.action}
                     onMouseEnter={() => setSelectedIndex(index)}
                     className={cn(
-                      "w-full flex items-center justify-between px-3 py-2 rounded-md transition-colors text-sm",
+                      "w-full flex items-center justify-between px-3 py-2 rounded-md transition-colors text-sm cursor-pointer",
                       index === selectedIndex
                         ? item.variant === "destructive"
                           ? "bg-destructive/10 text-destructive"

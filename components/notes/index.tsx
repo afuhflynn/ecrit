@@ -58,7 +58,7 @@ export const Notes = () => {
           </div>
           <Button onClick={() => onOpen("create-note")}>
             Create Note{" "}
-            <span className="text-muted-foreground">{`(${os} + N)`}</span>
+            <span className="text-muted-foreground">{`(${os} + ALT + N)`}</span>
           </Button>
         </div>
       </div>

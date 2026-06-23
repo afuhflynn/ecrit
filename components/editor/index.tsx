@@ -176,6 +176,7 @@ export default function Editor() {
     },
   });
 
+  // @note: This is where we save the note
   const handleSave = useCallback(() => {
     if (!isDirty) return;
     if (!data?.id || isSaving) return;
@@ -410,6 +411,7 @@ export default function Editor() {
       const characterCount = editor.storage.characterCount.words();
       setWordCount(characterCount);
       const markdown = editor.storage.markdown.getMarkdown();
+      console.log({ markdown, editor }); // @hint: Editor state info (for learning about the editor)
       window.localStorage.setItem(
         getLocalStorageKey("-markdown", data?.id as string),
         markdown

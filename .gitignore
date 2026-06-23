@@ -46,3 +46,7 @@ certificates
 # tempo
 **/tempobook/dynamic/
 **/tempobook/storyboards/
+
+# my local package manager files
+pnpm-lock.yaml
+pnpm-workspace.yaml

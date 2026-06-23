@@ -89,7 +89,7 @@ cd ecrit
   ./scripts/run-dev.sh
   ```
 
-  this will setup the entire dev env for if this is the first time running it locally and from there if it's the second time, you can just run `bun run dev`
+  this will setup the entire dev env for you if this is the first time running it locally and from there if it's the second time, you can just run `bun run dev`
 
 Open [http://localhost:3000](http://localhost:3000) to start writing.
 

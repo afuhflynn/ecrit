@@ -25,8 +25,23 @@ import { LoadingButton } from "./ui/loading-button";
 import { UserProfile } from "./ui/user-profile";
 import { Switch } from "./ui/switch";
 import { Label } from "./ui/label";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 export const SettingsClient = () => {
+  const router = useRouter();
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        router.push("/n");
+      }
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, []);
   return (
     <>
       <div className="flex flex-col gap-4">

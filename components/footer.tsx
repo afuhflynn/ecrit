@@ -10,8 +10,8 @@ export const Footer = () => {
   return (
     <div className="flex items-center justify-between w-full">
       <p className="text-sm text-muted-foreground">
-        © {currentYear} <span className="font-mono">ecrit.</span> All rights
-        reserved.
+        © {currentYear} <span className="font-mono">{siteConfig.name}</span> All
+        rights reserved.
       </p>
 
       <Button variant="ghost" size="icon" asChild>
